@@ -1,19 +1,7 @@
-name: CMake Release Packaging
-
-# Конвейер запускается при пушах в main и ОБЯЗАТЕЛЬНО при создании тегов (v*)
-on:
-  push:
-    branches: [ main, master ]
-    tags:
-      - 'v*'
-  pull_request:
-    branches: [ main, master ]
-
 jobs:
   build_and_release:
     runs-on: ubuntu-latest
 
-    # Даем права на создание релизов внутри репозитория
     permissions:
       contents: write
 
@@ -23,8 +11,11 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Install RPM Tools
-      run: sudo apt-get update && sudo apt-get install -y rpm
+    # Гарантируем, что в облаке есть инструменты для сборки DEB и RPM
+    - name: Install Packaging Tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y rpm binutils dpkg
 
     - name: Configure CMake
       run: cmake -H. -B_build -DBUILD_TESTS=ON
@@ -35,23 +26,26 @@ jobs:
     - name: Run Tests
       run: cmake --build _build --target test
 
-    # Генерируем сразу несколько типов пакетов (архив и DEB/RPM инсталляторы)
-    # Это заменяет ветвление из старого Travis CI
+    # Собираем пакеты по отдельности, чтобы точно видеть, если какой-то упадет
     - name: Generate Packages via CPack
       run: |
         cd _build
-        cpack -G "TGZ"
-        cpack -G "DEB"
-        cpack -G "RPM"
+        cpack -G TGZ
+        cpack -G DEB
+        cpack -G RPM
 
-    # Шаг автоматической публикации релиза (срабатывает ТОЛЬКО если это пуш тега)
+    # Выводим список файлов в консоль экшена (для дебага, если что-то пойдет не так)
+    - name: List Generated Packages
+      run: find _build/ -maxdepth 2 -name "*.deb" -o -name "*.rpm" -o -name "*.tar.gz"
+
+    # Используем двойную звездочку , чтобы экшен нашел файлы в ЛЮБЫХ подпапках _build
     - name: Create GitHub Release
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v2
       with:
         files: |
-          _build/*.tar.gz
-          _build/*.deb
-          _build/*.rpm
+          _build//*.tar.gz
+          _build//*.deb
+          _build//*.rpm
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
