@@ -1,6 +1,9 @@
 include(InstallRequiredSystemLibraries)
 
-set(CPACK_PACKAGE_CONTACT "${GITHUB_EMAIL}")
+# Жестко прописываем контактное лицо, чтобы Debian-генератор не ругался
+set(CPACK_PACKAGE_CONTACT "sofarun313131")
+set(CPACK_DEBIAN_PACKAGE_MAINTAINER "sofarun313131")
+
 set(CPACK_PACKAGE_VERSION_MAJOR "${PRINT_VERSION_MAJOR}")
 set(CPACK_PACKAGE_VERSION_MINOR "${PRINT_VERSION_MINOR}")
 set(CPACK_PACKAGE_VERSION_PATCH "${PRINT_VERSION_PATCH}")
