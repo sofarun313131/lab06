@@ -1,22 +1,33 @@
-name: CMake Testing
+name: CMake Packaging
 
 on: [push, pull_request]
 
 jobs:
-  build_and_test:
+  build_and_package:
     runs-on: ubuntu-latest
 
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
-        submodules: recursive  # ОБЯЗАТЕЛЬНО скачиваем подмодуль GTest
+        submodules: recursive
 
-    - name: Configure CMake with Tests
-      run: cmake -H. -B_build -DBUILD_TESTS=ON -DCMAKE_INSTALL_PREFIX=_install
+    - name: Configure CMake
+      run: cmake -H. -B_build -DBUILD_TESTS=ON -DCPACK_GENERATOR="TGZ"
 
-    - name: Build project and tests
+    - name: Build Project
       run: cmake --build _build
 
-    - name: Run Unit Tests
-      run: cmake --build _build --target test -- ARGS=--verbose
+    - name: Run Tests
+      run: cmake --build _build --target test
+
+    - name: Generate Package via CPack
+      run: |
+        cd _build
+        cpack -G "TGZ"
+
+    - name: Upload Package Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: print-package
+        path: _build/*.tar.gz
