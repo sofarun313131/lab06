@@ -1,5 +1,4 @@
 name: CMake Release Packaging
-
 on:
   push:
     branches: [ main, master ]
@@ -7,37 +6,28 @@ on:
       - 'v*'
   pull_request:
     branches: [ main, master ]
-
 permissions:
   contents: write
-
 jobs:
   build_and_release:
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
-
     - name: Install Packaging Tools
       run: |
         sudo apt-get update
         sudo apt-get install -y rpm dpkg-dev
-
     - name: Configure CMake
       run: cmake -H. -B_build -DBUILD_TESTS=ON -DCPACK_GENERATOR="TGZ;DEB;RPM"
-
     - name: Build Project
       run: cmake --build _build
-
     - name: Run Tests
       run: cmake --build _build --target test
-
     - name: Generate Packages via CPack
       run: |
         cd _build
         cpack
-
     - name: Create GitHub Release
       if: startsWith(github.ref, 'refs/tags/')
       uses: softprops/action-gh-release@v2
